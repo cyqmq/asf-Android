@@ -1,0 +1,23 @@
+#!/bin/sh
+# 极简 Gradle wrapper：调用 gradle/wrapper/gradle-wrapper.jar。
+# 若 jar 不存在，提示先用系统 gradle 生成 wrapper。
+APP_HOME=$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd -P)
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "错误：未找到 $WRAPPER_JAR"
+  echo "请在已安装 Gradle 的机器上执行: gradle wrapper --gradle-version 8.9"
+  echo "或直接使用 build-apk.sh（它会自动生成 wrapper）。"
+  exit 1
+fi
+
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+  JAVACMD="$JAVA_HOME/bin/java"
+else
+  JAVACMD=java
+fi
+
+exec "$JAVACMD" -Xmx64m -Xms64m \
+  -Dorg.gradle.appname="$(basename "$APP_HOME")" \
+  -classpath "$WRAPPER_JAR" \
+  org.gradle.wrapper.GradleWrapperMain "$@"

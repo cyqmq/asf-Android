@@ -174,3 +174,16 @@
 *.lz
 *.lzma
 *.iso
+
+# --- ASFAndroid ---
+# 构建产物
+dist/
+*.apk
+*.deb
+*.jks
+android/app/build/
+android/captures/
+
+# Gradle wrapper 需要入库，保证 clone 后可直接构建
+!android/gradlew
+!android/gradle/wrapper/gradle-wrapper.jar

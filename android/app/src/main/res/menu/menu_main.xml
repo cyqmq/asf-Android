@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_config"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/menu_config"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_logs"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="@string/menu_logs"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_autostart"
+        android:checkable="true"
+        android:title="@string/autostart"
+        app:showAsAction="never" />
+</menu>
