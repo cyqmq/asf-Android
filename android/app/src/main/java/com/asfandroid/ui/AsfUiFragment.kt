@@ -38,6 +38,13 @@ class AsfUiFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupWebView()
         binding.btnGoDashboard.setOnClickListener { onGoDashboard?.invoke() }
+        binding.btnWebBack.setOnClickListener {
+            if (binding.webview.canGoBack()) binding.webview.goBack()
+        }
+        binding.btnWebForward.setOnClickListener {
+            if (binding.webview.canGoForward()) binding.webview.goForward()
+        }
+        binding.btnWebReload.setOnClickListener { binding.webview.reload() }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -108,6 +115,7 @@ class AsfUiFragment : Fragment() {
         binding.layoutNotRunning.visibility = View.VISIBLE
         binding.webview.visibility = View.GONE
         binding.progress.visibility = View.GONE
+        binding.layoutWebNav.visibility = View.GONE
     }
 
     /** 运行时显示 WebView，隐藏提示层。 */
@@ -115,6 +123,7 @@ class AsfUiFragment : Fragment() {
         if (_binding == null) return
         binding.layoutNotRunning.visibility = View.GONE
         binding.webview.visibility = View.VISIBLE
+        binding.layoutWebNav.visibility = View.VISIBLE
     }
 
     override fun onDestroyView() {

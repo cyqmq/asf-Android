@@ -26,6 +26,12 @@
     <string name="network_settings">网络设置</string>
     <string name="other_settings">其他</string>
     <string name="dashboard_hint">启动后可在 WebView 页查看管理界面</string>
+    <string name="autoscroll_on">自动滚动：开</string>
+    <string name="autoscroll_off">自动滚动：关</string>
+    <string name="open_webview">打开 WebView</string>
+    <string name="web_admin_url">Web 管理地址</string>
+    <string name="external_access_disabled">仅本机可访问（外部访问未开启）</string>
+    <string name="external_access_enabled">外部访问已开启</string>
     <string name="channel_name">ASF 服务</string>
     <string name="channel_description">ArchiSteamFarm 后台运行服务</string>
 

@@ -11,8 +11,8 @@ android {
         applicationId = "com.asfandroid"
         minSdk = 26
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.0.19"
+        versionCode = 21
+        versionName = "1.0.20"
 
         // 构建脚本注入的配置
         // 注意：AAPT2 会把 assets 中的 .gz 自动解压为 .tar，因此这里用未压缩的 .tar

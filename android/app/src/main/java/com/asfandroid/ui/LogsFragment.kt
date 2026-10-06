@@ -4,12 +4,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.asfandroid.R
@@ -17,12 +16,20 @@ import com.asfandroid.core.AsfPaths
 import com.asfandroid.databinding.FragmentLogsBinding
 import java.io.File
 
-/** 日志查看器：列出 asf-data/logs 下的日志文件并显示内容。 */
+/** 实时日志页：跟随 asf-console.log 滚动显示 ASF 控制台输出。 */
 class LogsFragment : Fragment() {
 
     private var _binding: FragmentLogsBinding? = null
     private val binding get() = _binding!!
-    private var logs: List<File> = emptyList()
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var autoScroll = true
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            refresh()
+            handler.postDelayed(this, 2000)
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentLogsBinding.inflate(inflater, container, false)
@@ -31,79 +38,62 @@ class LogsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.listLogs.setOnItemClickListener { _, _, position, _ ->
-            showLog(logs[position])
+        binding.btnToggleAutoscroll.setText(if (autoScroll) R.string.autoscroll_on else R.string.autoscroll_off)
+        binding.btnToggleAutoscroll.setOnClickListener {
+            autoScroll = !autoScroll
+            binding.btnToggleAutoscroll.setText(if (autoScroll) R.string.autoscroll_on else R.string.autoscroll_off)
+            if (autoScroll) scrollToBottom()
         }
-        binding.btnLogRefresh.setOnClickListener { refresh() }
-        binding.btnCopyLogs.setOnClickListener { copyAllLogs() }
+        binding.btnCopyLogs.setOnClickListener { copyLogs() }
         refresh()
     }
 
-    override fun onHiddenChanged(hidden: Boolean) {
-        super.onHiddenChanged(hidden)
-        if (!hidden) refresh()
+    override fun onResume() {
+        super.onResume()
+        handler.post(pollRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(pollRunnable)
     }
 
     private fun refresh() {
-        if (!isAdded) return
-        val logsDir = AsfPaths.logsDir(requireContext())
-        logs = (logsDir.listFiles { f -> f.isFile && (f.extension == "txt" || f.extension == "log") } ?: emptyArray())
-            .sortedByDescending { it.lastModified() }
-        if (logs.isEmpty()) {
-            binding.tvLogEmpty.visibility = View.VISIBLE
-            binding.listLogs.visibility = View.GONE
+        if (!isAdded || _binding == null) return
+        val logFile = File(AsfPaths.logsDir(requireContext()), "asf-console.log")
+        val content = if (logFile.exists()) {
+            runCatching { logFile.readText().takeLast(200_000) }.getOrElse { "读取失败: ${it.message}" }
         } else {
-            binding.tvLogEmpty.visibility = View.GONE
-            binding.listLogs.visibility = View.VISIBLE
-            binding.listLogs.adapter = ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_list_item_1,
-                logs.map { "${it.name}  (${it.length()} B)" }
-            )
+            "（暂无 ASF 控制台输出）"
+        }
+        binding.tvLogContent.text = content
+        if (autoScroll) scrollToBottom()
+    }
+
+    private fun scrollToBottom() {
+        binding.scrollLogs.post {
+            binding.scrollLogs.fullScroll(View.FOCUS_DOWN)
         }
     }
 
-    private fun copyAllLogs() {
-        val sb = StringBuilder()
-        for (file in logs) {
-            sb.append("===== ${file.name} (${file.length()} B) =====\n")
-            sb.append(
-                runCatching { file.readText().takeLast(500_000) }
-                    .getOrElse { "读取失败: ${it.message}" }
-            )
-            sb.append("\n\n")
-        }
-        if (sb.isEmpty()) {
+    private fun copyLogs() {
+        val content = binding.tvLogContent.text.toString()
+        if (content.isEmpty()) {
             Toast.makeText(requireContext(), R.string.logs_empty, Toast.LENGTH_SHORT).show()
             return
         }
         val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("ASFAndroid 日志", sb.toString()))
+        clipboard.setPrimaryClip(ClipData.newPlainText("ASFAndroid 日志", content))
         Toast.makeText(requireContext(), R.string.logs_copied, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun showLog(file: File) {
-        val content = try {
-            file.readText().takeLast(200_000)
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "读取失败: ${e.message}", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val textView = TextView(requireContext()).apply {
-            text = content
-            textSize = 11f
-            typeface = android.graphics.Typeface.MONOSPACE
-            setPadding(24, 24, 24, 24)
-        }
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(file.name)
-            .setView(textView)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(pollRunnable)
+        super.onDestroy()
     }
 }

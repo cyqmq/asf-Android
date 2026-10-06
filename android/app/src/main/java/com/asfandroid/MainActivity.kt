@@ -88,6 +88,10 @@ class MainActivity : AppCompatActivity() {
             binding.bottomNav.selectedItemId = R.id.nav_dashboard
             showTab(dashboardFragment)
         }
+        dashboardFragment.onOpenWebView = {
+            binding.bottomNav.selectedItemId = R.id.nav_webview
+            showTab(asfUiFragment)
+        }
         settingsFragment.onOpenLaunchOptions = {
             showTab(configFragment)
         }
