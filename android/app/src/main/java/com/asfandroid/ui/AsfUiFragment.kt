@@ -17,7 +17,7 @@ import androidx.fragment.app.Fragment
 import com.asfandroid.core.AsfPaths
 import com.asfandroid.databinding.FragmentAsfUiBinding
 
-/** ASF-ui 主界面：加载 ASF 的 Web 管理面板。 */
+/** ASF-ui 主界面：加载 ASF 的 Web 管理面板；未运行时显示启动提示。 */
 class AsfUiFragment : Fragment() {
 
     private var _binding: FragmentAsfUiBinding? = null
@@ -25,6 +25,9 @@ class AsfUiFragment : Fragment() {
 
     private var loadStarted = false
     private var pageLoadFailed = false
+
+    /** 点击「前往仪表盘启动」时的回调。 */
+    var onGoDashboard: (() -> Unit)? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentAsfUiBinding.inflate(inflater, container, false)
@@ -34,6 +37,7 @@ class AsfUiFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupWebView()
+        binding.btnGoDashboard.setOnClickListener { onGoDashboard?.invoke() }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -96,6 +100,21 @@ class AsfUiFragment : Fragment() {
     /** ASF 停止时重置加载状态，避免重启后不刷新。 */
     fun onAsfStopped() {
         loadStarted = false
+    }
+
+    /** 未运行时显示提示层，隐藏 WebView。 */
+    fun showNotRunning() {
+        if (_binding == null) return
+        binding.layoutNotRunning.visibility = View.VISIBLE
+        binding.webview.visibility = View.GONE
+        binding.progress.visibility = View.GONE
+    }
+
+    /** 运行时显示 WebView，隐藏提示层。 */
+    fun showWebView() {
+        if (_binding == null) return
+        binding.layoutNotRunning.visibility = View.GONE
+        binding.webview.visibility = View.VISIBLE
     }
 
     override fun onDestroyView() {

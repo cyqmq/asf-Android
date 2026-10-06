@@ -3,25 +3,26 @@ package com.asfandroid
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.asfandroid.core.AsfController
-import com.asfandroid.core.AsfPaths
 import com.asfandroid.core.AsfStatus
 import com.asfandroid.databinding.ActivityMainBinding
 import com.asfandroid.ui.AsfUiFragment
 import com.asfandroid.ui.ConfigFragment
+import com.asfandroid.ui.DashboardFragment
 import com.asfandroid.ui.LogsFragment
+import com.asfandroid.ui.SettingsFragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,9 +35,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val dashboardFragment = DashboardFragment()
     private val asfUiFragment = AsfUiFragment()
     private val logsFragment = LogsFragment()
     private val configFragment = ConfigFragment()
+    private val settingsFragment = SettingsFragment()
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -57,7 +60,6 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_config -> {
                     showTab(configFragment)
-                    binding.bottomNav.selectedItemId = R.id.nav_config
                     true
                 }
                 R.id.action_logs -> {
@@ -82,6 +84,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        asfUiFragment.onGoDashboard = {
+            binding.bottomNav.selectedItemId = R.id.nav_dashboard
+            showTab(dashboardFragment)
+        }
+        settingsFragment.onOpenLaunchOptions = {
+            showTab(configFragment)
+        }
+
         setupFragments()
         setupBottomNav()
         setupSwitch()
@@ -89,21 +99,27 @@ class MainActivity : AppCompatActivity() {
         maybeRequestNotificationPermission()
     }
 
-private fun setupFragments() {
+    private fun setupFragments() {
         supportFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, dashboardFragment, "dashboard")
             .add(R.id.fragment_container, asfUiFragment, "asf_ui")
             .add(R.id.fragment_container, logsFragment, "logs")
             .add(R.id.fragment_container, configFragment, "config")
+            .add(R.id.fragment_container, settingsFragment, "settings")
+            .hide(asfUiFragment)
             .hide(logsFragment)
             .hide(configFragment)
+            .hide(settingsFragment)
             .commit()
     }
 
     private fun showTab(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
+            .hide(dashboardFragment)
             .hide(asfUiFragment)
             .hide(logsFragment)
             .hide(configFragment)
+            .hide(settingsFragment)
             .show(fragment)
             .commit()
     }
@@ -111,9 +127,10 @@ private fun setupFragments() {
     private fun setupBottomNav() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> showTab(asfUiFragment)
+                R.id.nav_dashboard -> showTab(dashboardFragment)
+                R.id.nav_webview -> showTab(asfUiFragment)
                 R.id.nav_logs -> showTab(logsFragment)
-                R.id.nav_config -> showTab(configFragment)
+                R.id.nav_settings -> showTab(settingsFragment)
             }
             true
         }
@@ -171,9 +188,13 @@ private fun setupFragments() {
         binding.statusDot.backgroundTintList = ContextCompat.getColorStateList(this, dotColor)
         binding.tvStatus.setTextColor(ContextCompat.getColor(this, textColor))
 
+        dashboardFragment.updateStatus(status)
+
         if (status == AsfStatus.RUNNING) {
+            asfUiFragment.showWebView()
             asfUiFragment.loadAsfUi()
         } else {
+            asfUiFragment.showNotRunning()
             asfUiFragment.onAsfStopped()
         }
     }

@@ -2,9 +2,30 @@
 <resources>
     <string name="app_name">ASFAndroid</string>
     <string name="asf_service">ASF 服务</string>
-    <string name="tab_home">ASF-ui</string>
+    <string name="tab_home">仪表盘</string>
+    <string name="tab_webview">WebView</string>
     <string name="tab_logs">日志</string>
-    <string name="tab_config">配置</string>
+    <string name="tab_settings">设置</string>
+    <string name="service_not_running">服务未启动</string>
+    <string name="go_dashboard">前往仪表盘启动</string>
+    <string name="start_asf">启动 ASF</string>
+    <string name="stop_asf">停止 ASF</string>
+    <string name="external_access">开启外部访问</string>
+    <string name="external_access_summary">允许局域网内其他设备访问 ASF 管理界面</string>
+    <string name="ip_address">IP 地址</string>
+    <string name="ip_port">端口</string>
+    <string name="launch_options">配置启动项</string>
+    <string name="launch_options_summary">编辑 ASF 配置文件（ASF.json 等）</string>
+    <string name="repository">仓库入口</string>
+    <string name="repository_summary">GitHub: cyqmq/asf-Android</string>
+    <string name="about">关于</string>
+    <string name="about_summary">ASFAndroid 版本信息</string>
+    <string name="settings_saved">设置已保存，重启 ASF 后生效</string>
+    <string name="input_ip_hint">例如 0.0.0.0 或 192.168.1.100</string>
+    <string name="input_port_hint">例如 1242</string>
+    <string name="network_settings">网络设置</string>
+    <string name="other_settings">其他</string>
+    <string name="dashboard_hint">启动后可在 WebView 页查看管理界面</string>
     <string name="channel_name">ASF 服务</string>
     <string name="channel_description">ArchiSteamFarm 后台运行服务</string>
 
