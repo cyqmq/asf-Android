@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="asf_primary">#0E6B3A</color>
+    <color name="asf_primary">#1DB954</color>
+    <color name="asf_primary_dark">#0E6B3A</color>
+    <color name="bg_dark">#0F1410</color>
+    <color name="surface_dark">#161C18</color>
+    <color name="surface_card">#1C2420</color>
+    <color name="text_primary">#E6EDF3</color>
+    <color name="text_secondary">#8B949E</color>
+    <color name="status_running">#3FB950</color>
+    <color name="status_starting">#D29922</color>
+    <color name="status_stopped">#8B949E</color>
+    <color name="divider">#2A3238</color>
 </resources>

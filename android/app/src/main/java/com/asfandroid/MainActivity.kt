@@ -179,6 +179,14 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+        val (dotColor, textColor) = when (status) {
+            AsfStatus.RUNNING -> R.color.status_running to R.color.status_running
+            AsfStatus.STARTING -> R.color.status_starting to R.color.status_starting
+            AsfStatus.STOPPED -> R.color.status_stopped to R.color.status_stopped
+        }
+        binding.statusDot.backgroundTintList = ContextCompat.getColorStateList(this, dotColor)
+        binding.tvStatus.setTextColor(ContextCompat.getColor(this, textColor))
+
         if (status == AsfStatus.RUNNING) {
             val url = AsfPaths.asfUrl()
             val webView = binding.webview

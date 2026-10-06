@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ASFAndroid</string>
+    <string name="asf_service">ASF 服务</string>
     <string name="channel_name">ASF 服务</string>
     <string name="channel_description">ArchiSteamFarm 后台运行服务</string>
 
