@@ -302,9 +302,10 @@ for d in dev proc sys var/run var/log; do
   mkdir -p "$ROOTFS_DIR/$d"
 done
 
-# 打包 rootfs
+# 打包 rootfs（--dereference 把符号链接替换为真实文件/硬链接，
+# 避免 Android 设备上 SELinux 禁止创建符号链接导致 rootfs 不可用）
 echo "打包 $TARBALL ..."
-tar -C "$ROOTFS_DIR" -czf "$TARBALL" .
+tar --dereference -C "$ROOTFS_DIR" -czf "$TARBALL" .
 
 echo
 echo "构建完成："

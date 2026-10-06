@@ -1,5 +1,8 @@
 package com.asfandroid.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -30,6 +33,7 @@ class LogActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.btn_log_refresh).setOnClickListener { refresh() }
+        findViewById<View>(R.id.btn_copy_logs).setOnClickListener { copyAllLogs() }
         refresh()
     }
 
@@ -49,6 +53,25 @@ class LogActivity : AppCompatActivity() {
                 logs.map { "${it.name}  (${it.length()} B)" }
             )
         }
+    }
+
+    private fun copyAllLogs() {
+        val sb = StringBuilder()
+        for (file in logs) {
+            sb.append("===== ${file.name} (${file.length()} B) =====\n")
+            sb.append(
+                runCatching { file.readText().takeLast(500_000) }
+                    .getOrElse { "读取失败: ${it.message}" }
+            )
+            sb.append("\n\n")
+        }
+        if (sb.isEmpty()) {
+            Toast.makeText(this, R.string.logs_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("ASFAndroid 日志", sb.toString()))
+        Toast.makeText(this, R.string.logs_copied, Toast.LENGTH_SHORT).show()
     }
 
     private fun showLog(file: File) {

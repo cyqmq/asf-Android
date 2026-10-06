@@ -5,11 +5,14 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.provider.Settings
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -22,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.asfandroid.core.AsfController
 import com.asfandroid.core.AsfPaths
+import com.asfandroid.core.AsfStatus
 import com.asfandroid.databinding.ActivityMainBinding
 import com.asfandroid.ui.ConfigActivity
 import com.asfandroid.ui.LogActivity
@@ -31,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var pageLoadFailed = false
     private val handler = Handler(Looper.getMainLooper())
+    private var webViewLoadStarted = false
     private val pollRunnable = object : Runnable {
         override fun run() {
             updateStatus()
@@ -70,6 +75,10 @@ class MainActivity : AppCompatActivity() {
                         .putBoolean("boot_autostart", item.isChecked)
                         .apply()
                     Toast.makeText(this, R.string.autostart_saved, Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.action_battery -> {
+                    requestIgnoreBatteryOptimizations()
                     true
                 }
                 else -> false
@@ -149,9 +158,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateStatus() {
-        val running = AsfController.isRunning(this)
+        val status = AsfController.getStatus(this)
         binding.switchAsf.setOnCheckedChangeListener(null)
-        binding.switchAsf.isChecked = running
+        binding.switchAsf.isChecked = status != AsfStatus.STOPPED
         binding.switchAsf.setOnCheckedChangeListener { _, checked ->
             if (checked) {
                 AsfController.start(this)
@@ -163,16 +172,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvStatus.setText(
-            if (running) R.string.status_running else R.string.status_stopped
+            when (status) {
+                AsfStatus.RUNNING -> R.string.status_running
+                AsfStatus.STARTING -> R.string.status_starting
+                AsfStatus.STOPPED -> R.string.status_stopped
+            }
         )
 
-        if (running) {
+        if (status == AsfStatus.RUNNING) {
             val url = AsfPaths.asfUrl()
             val webView = binding.webview
-            if (webView.url != url || pageLoadFailed) {
+            // 只在首次就绪时加载一次；加载失败才重试，避免 ASF-ui 内 URL 变化导致无限刷新
+            if (!webViewLoadStarted) {
+                webViewLoadStarted = true
                 pageLoadFailed = false
                 webView.loadUrl(url)
+            } else if (pageLoadFailed) {
+                pageLoadFailed = false
+                webView.reload()
             }
+        } else {
+            webViewLoadStarted = false
         }
     }
 
@@ -182,6 +202,25 @@ class MainActivity : AppCompatActivity() {
             PackageManager.PERMISSION_GRANTED
         ) {
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(PowerManager::class.java)
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                try {
+                    startActivity(
+                        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                            .setData(Uri.parse("package:$packageName"))
+                    )
+                } catch (_: Exception) {
+                    // 部分 ROM 不支持该 Intent，引导到系统电池设置页
+                    startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                }
+            } else {
+                Toast.makeText(this, R.string.battery_optimization_already, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

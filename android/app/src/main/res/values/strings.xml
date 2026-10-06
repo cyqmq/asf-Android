@@ -13,10 +13,14 @@
     <string name="menu_logs">日志</string>
     <string name="autostart">开机自启</string>
     <string name="autostart_saved">开机自启设置已保存</string>
+    <string name="battery_optimization">电池优化白名单</string>
+    <string name="battery_optimization_already">已在电池优化白名单中</string>
 
     <string name="quick_toggle">ASF</string>
 
     <string name="refresh">刷新</string>
+    <string name="copy_logs">复制全部日志</string>
+    <string name="logs_copied">日志已复制到剪贴板</string>
     <string name="save">保存</string>
     <string name="saved">已保存</string>
     <string name="save_failed">保存失败</string>

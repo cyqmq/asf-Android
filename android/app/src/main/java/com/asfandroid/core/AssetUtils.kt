@@ -73,6 +73,18 @@ object AssetUtils {
                 }
             }
 
+            // tar --dereference 会把符号链接变成硬链接：复制目标文件内容
+            entry.isLink -> {
+                val linkTarget = File(destDir, entry.linkName).normalize()
+                if (linkTarget.exists()) {
+                    target.parentFile?.mkdirs()
+                    linkTarget.copyTo(target, overwrite = true)
+                    applyPermissions(target.toPath(), entry.mode)
+                } else {
+                    Log.w(TAG, "硬链接目标不存在: ${entry.linkName}")
+                }
+            }
+
             else -> {
                 target.parentFile?.mkdirs()
                 tar.copyTo(
