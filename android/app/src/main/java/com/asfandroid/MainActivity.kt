@@ -1,47 +1,42 @@
 package com.asfandroid
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.net.Uri
-import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
-import android.webkit.SslErrorHandler
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.asfandroid.core.AsfController
 import com.asfandroid.core.AsfPaths
 import com.asfandroid.core.AsfStatus
 import com.asfandroid.databinding.ActivityMainBinding
-import com.asfandroid.ui.ConfigActivity
-import com.asfandroid.ui.LogActivity
+import com.asfandroid.ui.AsfUiFragment
+import com.asfandroid.ui.ConfigFragment
+import com.asfandroid.ui.LogsFragment
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private var pageLoadFailed = false
     private val handler = Handler(Looper.getMainLooper())
-    private var webViewLoadStarted = false
     private val pollRunnable = object : Runnable {
         override fun run() {
             updateStatus()
             handler.postDelayed(this, 1000)
         }
     }
+
+    private val asfUiFragment = AsfUiFragment()
+    private val logsFragment = LogsFragment()
+    private val configFragment = ConfigFragment()
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -61,11 +56,13 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_config -> {
-                    startActivity(Intent(this, ConfigActivity::class.java))
+                    showTab(configFragment)
+                    binding.bottomNav.selectedItemId = R.id.nav_config
                     true
                 }
                 R.id.action_logs -> {
-                    startActivity(Intent(this, LogActivity::class.java))
+                    showTab(logsFragment)
+                    binding.bottomNav.selectedItemId = R.id.nav_logs
                     true
                 }
                 R.id.action_autostart -> {
@@ -85,53 +82,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        setupWebView()
+        setupFragments()
+        setupBottomNav()
         setupSwitch()
 
         maybeRequestNotificationPermission()
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWebView() {
-        val webView = binding.webview
-        webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            cacheMode = WebSettings.LOAD_NO_CACHE
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            userAgentString = userAgentString + " ASFAndroid"
-        }
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                binding.progress.visibility = android.view.View.VISIBLE
-            }
+private fun setupFragments() {
+        supportFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, asfUiFragment, "asf_ui")
+            .add(R.id.fragment_container, logsFragment, "logs")
+            .add(R.id.fragment_container, configFragment, "config")
+            .hide(logsFragment)
+            .hide(configFragment)
+            .commit()
+    }
 
-            override fun onPageFinished(view: WebView?, url: String?) {
-                binding.progress.visibility = android.view.View.GONE
-                pageLoadFailed = false
-            }
+    private fun showTab(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .hide(asfUiFragment)
+            .hide(logsFragment)
+            .hide(configFragment)
+            .show(fragment)
+            .commit()
+    }
 
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?
-            ) {
-                binding.progress.visibility = android.view.View.GONE
-                pageLoadFailed = true
+    private fun setupBottomNav() {
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> showTab(asfUiFragment)
+                R.id.nav_logs -> showTab(logsFragment)
+                R.id.nav_config -> showTab(configFragment)
             }
-
-            @Deprecated("Deprecated in Java")
-            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
-                binding.progress.visibility = android.view.View.GONE
-                pageLoadFailed = true
-            }
-
-            // ASF-ui 是 http，且可能包含自签名场景；此处仅用于局域网/本机 IPC。
-            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-                handler?.proceed()
-            }
+            true
         }
     }
 
@@ -188,19 +172,9 @@ class MainActivity : AppCompatActivity() {
         binding.tvStatus.setTextColor(ContextCompat.getColor(this, textColor))
 
         if (status == AsfStatus.RUNNING) {
-            val url = AsfPaths.asfUrl()
-            val webView = binding.webview
-            // 只在首次就绪时加载一次；加载失败才重试，避免 ASF-ui 内 URL 变化导致无限刷新
-            if (!webViewLoadStarted) {
-                webViewLoadStarted = true
-                pageLoadFailed = false
-                webView.loadUrl(url)
-            } else if (pageLoadFailed) {
-                pageLoadFailed = false
-                webView.reload()
-            }
+            asfUiFragment.loadAsfUi()
         } else {
-            webViewLoadStarted = false
+            asfUiFragment.onAsfStopped()
         }
     }
 
@@ -223,7 +197,6 @@ class MainActivity : AppCompatActivity() {
                             .setData(Uri.parse("package:$packageName"))
                     )
                 } catch (_: Exception) {
-                    // 部分 ROM 不支持该 Intent，引导到系统电池设置页
                     startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
                 }
             } else {

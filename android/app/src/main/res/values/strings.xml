@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">ASFAndroid</string>
     <string name="asf_service">ASF 服务</string>
+    <string name="tab_home">ASF-ui</string>
+    <string name="tab_logs">日志</string>
+    <string name="tab_config">配置</string>
     <string name="channel_name">ASF 服务</string>
     <string name="channel_description">ArchiSteamFarm 后台运行服务</string>
 
